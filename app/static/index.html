@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>飞行数据链路 · 报文规则遮蔽审计</title>
+  <style>
+    :root { --bg:#0f1623; --panel:#182234; --line:#2a3852; --ink:#e6ecf5; --muted:#93a2bd; --ok:#2fbf71; --bad:#e0556b; --accent:#4f8cff; --warn:#e8a33d; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--ink); }
+    header { padding:20px 28px; border-bottom:1px solid var(--line); background:#121a29; }
+    header h1 { margin:0 0 4px; font-size:20px; }
+    header p { margin:0; color:var(--muted); font-size:13px; }
+    main { max-width:1180px; margin:0 auto; padding:24px 28px 60px; display:grid; grid-template-columns:minmax(360px,5fr) minmax(340px,4fr); gap:22px; }
+    @media (max-width:960px){ main{grid-template-columns:1fr;} }
+    section.panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px; }
+    section.panel h2 { margin:0 0 14px; font-size:15px; }
+    label { display:block; font-size:12px; color:var(--muted); margin:8px 0 3px; }
+    input, select { width:100%; padding:7px 9px; background:#0e1626; color:var(--ink); border:1px solid var(--line); border-radius:6px; font-size:13px; }
+    input:focus, select:focus { outline:none; border-color:var(--accent); }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .rule-card { border:1px solid var(--line); border-radius:8px; padding:12px; margin-bottom:12px; background:#131d2f; }
+    .rule-card .head { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+    .rule-card .idx { font-size:12px; color:var(--muted); }
+    button { cursor:pointer; border:none; border-radius:6px; padding:8px 14px; font-size:13px; }
+    button.primary { background:var(--accent); color:#fff; }
+    button.ghost { background:transparent; color:var(--muted); border:1px solid var(--line); }
+    button.danger { background:transparent; color:var(--bad); border:1px solid var(--bad); padding:3px 9px; font-size:12px; }
+    .toolbar { display:flex; gap:10px; align-items:center; margin-top:6px; flex-wrap:wrap; }
+    .alert { padding:9px 12px; border-radius:7px; font-size:13px; margin:10px 0; white-space:pre-wrap; }
+    .alert.err { background:#3a1d27; border:1px solid var(--bad); color:#ffb3bf; }
+    .alert.ok { background:#15301f; border:1px solid var(--ok); color:#a6f2c8; }
+    table { width:100%; border-collapse:collapse; font-size:12.5px; }
+    th, td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+    th { color:var(--muted); font-weight:600; }
+    .tag { display:inline-block; padding:1px 8px; border-radius:99px; font-size:11.5px; font-weight:600; }
+    .tag.partial { background:#133a58; color:#8fd0ff; }
+    .tag.full { background:#3a2330; color:#ff9db0; }
+    .mono { font-family:ui-monospace,Menlo,Consolas,monospace; }
+    .muted { color:var(--muted); }
+    .lookup { display:flex; gap:8px; margin-bottom:14px; }
+    .lookup input { flex:1; }
+    .covered-list .mono { color:#ffb08f; }
+    details summary { cursor:pointer; color:var(--muted); font-size:12px; margin-top:4px; }
+    .witness-box { background:#0e1626; border:1px solid var(--line); border-radius:6px; padding:7px 9px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; line-height:1.7; }
+    .proto-both { color:var(--warn); }
+  </style>
+</head>
+<body>
+<header>
+  <h1>飞行数据链路 · 报文规则遮蔽审计</h1>
+  <p>按优先顺序提交至多 18 条五维规则（协议 / 源 CIDR / 目的 CIDR / 源端口区间 / 目的端口区间），逐规则裁决剩余区域，结论以审计标识冻结。</p>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>规则录入</h2>
+    <label>稳定审计标识（audit_id）</label>
+    <input id="auditId" placeholder="例如 flight-route-2026-09a" />
+
+    <div id="ruleList" style="margin-top:14px;"></div>
+
+    <div class="toolbar">
+      <button class="ghost" id="addRule" type="button">＋ 添加规则</button>
+      <span class="muted" id="ruleCount"></span>
+      <span style="flex:1"></span>
+      <button class="primary" id="submitBtn" type="button">提交并冻结裁决</button>
+    </div>
+    <div id="formAlert"></div>
+  </section>
+
+  <section class="panel">
+    <h2>冻结结论查询</h2>
+    <div class="lookup">
+      <input id="lookupId" placeholder="输入审计标识重新查看" />
+      <button class="primary" id="lookupBtn" type="button">查询</button>
+    </div>
+    <div id="lookupAlert"></div>
+    <div id="result"></div>
+  </section>
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

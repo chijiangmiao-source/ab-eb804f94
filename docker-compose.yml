@@ -1,0 +1,42 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: flight-rule-audit:latest
+    container_name: flight-rule-audit-web
+    # 宿主机访问端口可通过环境变量 HOST_PORT 配置，默认 8080
+    ports:
+      - "${HOST_PORT:-8080}:8080"
+    environment:
+      PORT: "8080"
+      DATA_DIR: /data
+    volumes:
+      - audit-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 3s
+    restart: unless-stopped
+
+  verify:
+    image: flight-rule-audit:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flight-rule-audit-verify
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      BASE_URL: http://web:8080
+      VERIFY_RUN_ID: compose
+    # 针对一条部分遮蔽、一条完全遮蔽及非法重传执行：
+    # 代码测试 + 构建检查 + HTTP 冒烟；以退出码报告结果
+    command: ["python", "scripts/verify.py"]
+    restart: "no"
+
+volumes:
+  audit-data:
